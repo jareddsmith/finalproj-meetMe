@@ -62,7 +62,7 @@ def choose():
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
     flask.session['calendars'] = list_calendars(gcal_service)
-    return render_template('index.html')
+    return render_template('calendars.html')
 
 ####
 #
@@ -187,6 +187,9 @@ def setrange():
     widget.
     """
     app.logger.debug("Entering setrange")
+    flask.session['title'] = request.form.get('title')
+    flask.session['author'] = request.form.get('author')
+    flask.flash("The title of the proposed meeting is '{}' and the author is '{}'.".format(flask.session['title'],flask.session['author']))
     flask.flash("Setrange gave us '{}' for the date".format(
       request.form.get('daterange')))
     daterange = request.form.get('daterange')
@@ -198,10 +201,22 @@ def setrange():
         request.form.get('begin_time'), request.form.get('end_time')))
     flask.session['begin_time'] = interpret_time(request.form.get('begin_time'))
     flask.session['end_time'] = interpret_time(request.form.get('end_time'))
-    print(flask.session['end_time'].format("HH:mm"))
+    flask.session['length_hours'] =  request.form.get('hours')
+    flask.session['length_minutes'] =  request.form.get('minutes')
+    flask.session['location'] = request.form.get('location')
+    flask.session['comments'] = request.form.get('comments')
+    flask.flash("The length of the proposed meeting is {} hour(s) {} minute(s)".format(flask.session['length_hours'],flask.session['length_minutes']))
+
+    if flask.session['location']:
+        flask.flash("The location of the proposed meeting is '{}'.".format(flask.session['location']))
+
+    if flask.session['comments']:
+        flask.flash("Comments/Notes provided: '{}'".format(flask.session['comments']))
+    
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {} times as {} - {}".format( daterange_parts[0], daterange_parts[1],
                 flask.session['begin_date'], flask.session['end_date'],
                 flask.session['begin_time'], flask.session['end_time']))
+    
     return flask.redirect(flask.url_for("choose"))
 
 @app.route('/selected', methods=['POST'])
@@ -218,7 +233,7 @@ def fetchcal():
             cals.append(cal)
     app.logger.debug(cals)
     find_busy_free(cals)
-    return flask.redirect("/index")
+    return render_template('free_times.html')
 
 ####
 #
@@ -399,33 +414,8 @@ def find_busy_free(cal_list):
         else:
             break
 
-    #Prints busy times
-    app.logger.debug(ret_busy)
-    if ret_busy != []:
-        flask.flash("These busy times were found:")
-        for busy_time in ret_busy:
-            b_start = arrow.get(busy_time['start']).to('local').format("MM/DD/YYYY HH:mm A")
-            b_end = arrow.get(busy_time['end']).to('local').format("HH:mm A")
-            
-            message = "Busy from {} to {}".format(b_start,b_end)
-            flask.flash(message)
-    else:
-        flask.flash("No busy times found")
-
-    flask.flash("")
     ret_free = free_time(ret_busy)
     app.logger.debug(ret_free)
-    if ret_free != []:
-        flask.flash("These free times were found:")
-        for fr_time in ret_free:
-            f_start = arrow.get(fr_time['start']).to('local').format("MM/DD/YYYY HH:mm A")
-            f_end = arrow.get(fr_time['end']).to('local').format("HH:mm A")
-            
-            message = "Free from {} to {}".format(f_start,f_end)
-            flask.flash(message)
-    else:
-        flask.flash("No free times found")
-
 
 def sort_times(ev_list):
     """
@@ -497,6 +487,7 @@ def free_time(busy_list):
         free_times.append({'start': last_ev['end'], 'end': end})
 
     app.logger.debug(free_times)
+    flask.session['free_times'] = time_convert(free_times)
     return free_times
 
 def consolidate_events(ev_list):
@@ -524,6 +515,29 @@ def consolidate_events(ev_list):
     consolidated.append(ev_list[len(ev_list)-1])
 
     return consolidated
+
+def time_convert(ev_list):
+    """
+    Converts and formats times of each event in a list
+    """
+
+    converted = []
+    for i in range(len(ev_list)):
+        ev = ev_list[i]
+        start = ev['start']
+        end = ev['end']
+        
+        start = arrow.get(start).to('local')
+        end = arrow.get(end).to('local')
+        
+        start = start.format("MM/DD/YYYY HH:mm A")
+        end = end.format("HH:mm A")
+        
+        converted.append({'start': start, 'end': end})
+    
+    app.logger.debug(converted)
+
+    return converted
 
 #################
 #
