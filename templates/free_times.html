@@ -1,0 +1,48 @@
+<html lang="en"><head>
+<title> Meet Me: Free Times</title>
+<link rel="stylesheet" type="text/css"
+href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+href="/static/css/busy.css"
+/>
+
+</head>
+
+<body>
+	<div class="container">
+        <h1>Choose calendars to use:</h1>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <hr>
+        <form action="/selected" method="post">
+            {% if session.free_times is defined  %}
+                <div class="row">
+                {% for fr_time in session.free_times %}
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ fr_time }}
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        <br>
+        <div class="row">
+            <div class="col-md-4">
+                <input type="submit" value="Choose"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/index'" value="Back"/>
+            </div>
+        </div>
+		</form>
+	</div><!--container-->
+</body>
+
+</html>
