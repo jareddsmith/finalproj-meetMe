@@ -1,0 +1,52 @@
+<html lang="en"><head>
+<title> Meet Me: Manage Schedules</title>
+<link rel="stylesheet" type="text/css"
+href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+href="/static/css/busy.css"
+/>
+
+</head>
+
+<body>
+	<div class="container">
+        <h1>Schedules found</h1>
+        <h5>Manage schedules:</h5>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <hr>
+        {% if session.schedules is defined  %}
+            {% for entry in session.schedules %}
+                <form action="/_delete" method="post">
+                    <div class="schedule">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ entry.author }}
+                            </div>
+                            <div class="col-md-2">
+                                <input type="hidden" name="entryID" value="{{ entry._id }}"/>
+                                <input type="submit" value="Delete?"/>
+                            </div>
+                        </div> <!-- row -->
+                    </div> <!-- schedule -->
+                </form>
+            {% endfor %}
+        {% endif %}
+        {% if not session.schedules %}
+            <p>No schedules found. You must have deleted too many, including your own!</p>
+            <input style="display: table-cell" type="button" onclick="document.location='/index'" value="Restart"/>
+        {% endif %}
+        
+	</div><!--container-->
+</body>
+</html>

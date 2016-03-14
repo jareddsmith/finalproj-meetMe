@@ -12,7 +12,8 @@ href="/static/css/busy.css"
 
 <body>
 	<div class="container">
-        <h1>Choose calendars to use:</h1>
+        <h1>Free times found</h1>
+        <h5>(Dates not shown are considered inactive and ineligible.)</h5>
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <ul class=flashes>
@@ -23,25 +24,22 @@ href="/static/css/busy.css"
             {% endif %}
         {% endwith %}
         <hr>
-        <form action="/selected" method="post">
-            {% if session.free_times is defined  %}
-                <div class="row">
-                {% for fr_time in session.free_times %}
+            {% if session.display_times is defined  %}
+                {% for fr_time in session.display_times %}
                 <div class="row">
                     <div class="col-md-4">
-                        {{ fr_time }}
+                        {{ fr_time['start'] }} to {{ fr_time['disp_end'] }}
                     </div>
                 </div>
                 {% endfor %}
-                </div>
             {% endif %}
+            <div class="row"></div>
         <br>
         <div class="row">
             <div class="col-md-4">
-                <input type="submit" value="Choose"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/index'" value="Back"/>
+                <input style="display: table-cell" type="button" onclick="document.location='/manage'" value="Next"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/index'" value="Back"/>
             </div>
         </div>
-		</form>
 	</div><!--container-->
 </body>
 

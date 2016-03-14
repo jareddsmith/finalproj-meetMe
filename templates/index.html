@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html lang="en"> <head>
-<title>Appointments</title>
+<title>Meet Me: Propose a Meeting</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="stylesheet" type="text/css"
@@ -32,9 +32,7 @@
 <body>
 <div class="container">
 
-<h1>Busy and Free times</h1>
-<h5>(Dates not shown are open.)</h5>
-
+<h1>Propose a meeting</h1>
 <!--
   -- If there are any warnings or other messages from a prior action,
   -- they appear above the rest of the content, just until the next 
@@ -50,17 +48,28 @@
     </ul>
   {% endif %}
 {% endwith %}
-
 <hr>
-<h2>Date range</h2>
-  <form action="/setrange" method="post">
-  <input type="text" name="daterange" placeholder="MM/DD/YYYY - MM/DD/YYYY" size="12"
+
+  <form action="/setrange" method="post" style="display:table">
+  <p style="display: table-row">
+      <label style="display: table-cell; vertical-align: middle" align="right">Title:&nbsp;</label>
+      <input type="text" name="title" value="Taco Tuesday" placeholder="Required" style="display:table" align="left" size="52"/>
+  </p>
+  <br>
+  <p style="display: table-row">
+  <label style="display: table-cell; vertical-align: middle" align="right">Proposed by:&nbsp;</label>
+  <input type="text" name="author" value="Jared Smith" placeholder="Required" style="display:table" align="left" size="52"/>
+  </p>
+  <br>
+  <p style="display: table-row">
+      <label style="display: table-cell" align="right">Date Range:&nbsp;</label>
+      <input type="text" name="daterange" placeholder="MM/DD/YYYY - MM/DD/YYYY" size="12"
     {% if session.daterange is defined %}
          value="{{session.daterange}}"
     {% endif %}
      class="pull-down"
-     style="background: #fff; cursor: pointer; padding: 5px 10px;
-     border: 1px solid #ccc; width: 16em" >
+     style="display: table-cell; background: #fff; cursor: pointer; padding: 5px 10px;
+     border: 1px solid #ccc; width: 13em" >
   <script type="text/javascript">
   $(function() {
   $('input[name="daterange"]').daterangepicker(
@@ -77,50 +86,61 @@
        );
     });
   </script>
-<p>
-<h2>Time Range</h2>
-in AM/PM or 24 hour format
-</p>
+  </p>
+  <br>
+  <p style="display: table-row">
+    <label style="display: table-cell" align="right">Time Range (Required):&nbsp;</label>
+    <input type="text" name="begin_time" value="7am" placeholder="HH:mm (am/pm)"size="24"/>&nbsp;to
+    <input type="text" name="end_time" value="5pm" placeholder="HH:mm (am/pm)" size="23"/>
+  </p>
+  <br>
+  <p style="display: table-row">
+      <label style="display: table-cell" align="right">Length (Optional):&nbsp;</label>
+      <select style="display: table-cell" name="hours" >
+          <option value="0">- Hours -</option>
+          <option value="1">1 hour</option>
+          <option value="2">2 hours</option>
+          <option value="3">3 hours</option>
+          <option value="4">4 hours</option>
+          <option value="5">5 hours</option>
+          <option value="6">6 hours</option>
+          <option value="7">7 hours</option>
+          <option value="8">8 hours</option>
+      </select>
+      &nbsp;
+      <select style="display: table-cell" name="minutes">
+          <option value="0">- Minutes -</option>
+          <option value="5">5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+          <option value="20">20 minutes</option>
+          <option value="25">25 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="35">35 minutes</option>
+          <option value="40">40 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="50">50 minutes</option>
+          <option value="55">55 minutes</option>
+      </select>
+  </p>
+  <br>
+  <p style="display: table-row">
+      <label style="display: table-cell" align="right">Location:&nbsp;</label>
+      <input type="text" name="location" placeholder="Optional" size="52"/>
+  </p>
+  <br>
+  <p style="display: table-row">
+      <label style="display: table-cell" align="right">Comments/Notes:&nbsp;</label>
+      <textarea style="display: table-cell; resize: none; vertical-align: top" name="comments" placeholder="Optional" cols=50 rows=8></textarea>
+  </p>
+  
 <br>
-<label>Begin time:
-<input type=text name="begin_time" placeholder="HH:mm (am/pm)">
-</label>
-
-<label>End time:
-<input type=text name="end_time" placeholder="HH:mm (am/pm)">
-</label>
-
-<br><br><input type="submit" value="Set ranges" />
-</form>
-
-    <!--
-    Show the calendar list (if we have it).  This will need to be turned into
-    a form from which calendars can be picked. Up to three entries are
-    shown in each row (but the order is across then down; I would
-    prefer down then across). 
-    -->
-<hr>
-<h3>Calenders found</h3>
-<form action="/selected" method="post">
-{% if session.calendars is defined  %}
-    <div class="row">
-  {% for cal in session.calendars if cal.selected %}
-          <div class="col-md-4">
-                  <input type="checkbox" name="calendar" value="{{cal.id}}">
-                      {{ cal.summary }}
-          </div>
-         {% if loop.index is divisibleby 3 %}
-          </div> <div class="row">
-         {% endif %}
-  {% endfor %}
-    </div>
-{% endif %}
-    <br>
-    <div class="row">
-        <div class="col-md-4">
-            <input type="submit" value="Choose"/>
-        </div>
-    </div>
+<br>
+<p style="display: table-row">
+    <input style="display: table-cell" type="submit" value="Set Details"/>
+    &nbsp;
+    <input style="display: table-cell" type="button" onclick="document.location='/index'" value="Cancel"/>
+</p>
 </form>
 </div>  <!-- container (for bootstrap) -->
 </body>
