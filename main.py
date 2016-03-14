@@ -21,6 +21,10 @@ import httplib2   # used in oauth2 flow
 # Google API for services 
 from apiclient import discovery
 
+# Mongo database
+from pymongo import MongoClient
+from bson import ObjectId
+
 ###
 # Globals
 ###
@@ -30,6 +34,18 @@ app = flask.Flask(__name__)
 SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
 CLIENT_SECRET_FILE = CONFIG.GOOGLE_LICENSE_KEY  ## You'll need this
 APPLICATION_NAME = 'MeetMe class project'
+
+print("Entering Setup")
+try:
+    dbclient = MongoClient(CONFIG.MONGO_URL)
+    db = dbclient.schedules
+    collection = db.dated
+
+except:
+    print("Failure opening database.  Is Mongo running? Correct password?")
+    sys.exit(1)
+
+app.secret_key = str(uuid.uuid4())
 
 #############################
 #
@@ -190,33 +206,47 @@ def setrange():
     flask.session['title'] = request.form.get('title')
     flask.session['author'] = request.form.get('author')
     flask.flash("The title of the proposed meeting is '{}' and the author is '{}'.".format(flask.session['title'],flask.session['author']))
-    flask.flash("Setrange gave us '{}' for the date".format(
+    flask.flash("'{}' is the date range.".format(
       request.form.get('daterange')))
     daterange = request.form.get('daterange')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
     flask.session['begin_date'] = interpret_date(daterange_parts[0])
     flask.session['end_date'] = interpret_date(daterange_parts[2])
-    flask.flash("Setrange gave us '{}' and '{}' as beginning and ending times, respectively".format(
+    flask.flash("'{}' and '{}' are the beginning and ending times, respectively.".format(
         request.form.get('begin_time'), request.form.get('end_time')))
+    
+    #Handles input errors
+    if error_handler(flask.session['title'], flask.session['author'], request.form.get('begin_time'), request.form.get('end_time')):
+        return flask.redirect("/index")
+
     flask.session['begin_time'] = interpret_time(request.form.get('begin_time'))
     flask.session['end_time'] = interpret_time(request.form.get('end_time'))
+    
     flask.session['length_hours'] =  request.form.get('hours')
     flask.session['length_minutes'] =  request.form.get('minutes')
+    
     flask.session['location'] = request.form.get('location')
     flask.session['comments'] = request.form.get('comments')
-    flask.flash("The length of the proposed meeting is {} hour(s) {} minute(s)".format(flask.session['length_hours'],flask.session['length_minutes']))
 
+    length_check = flask.session['length_hours'] + flask.session['length_minutes']
+
+    app.logger.debug(length_check)
+    
+    #Check the optional fields to see what needs to be flashed on the next page.
+    if length_check != "00":
+        flask.flash("The length of the proposed meeting is {} hour(s) {} minute(s).".format(flask.session['length_hours'],flask.session['length_minutes']))
+                
     if flask.session['location']:
         flask.flash("The location of the proposed meeting is '{}'.".format(flask.session['location']))
 
     if flask.session['comments']:
         flask.flash("Comments/Notes provided: '{}'".format(flask.session['comments']))
-    
+
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {} times as {} - {}".format( daterange_parts[0], daterange_parts[1],
                 flask.session['begin_date'], flask.session['end_date'],
                 flask.session['begin_time'], flask.session['end_time']))
-    
+
     return flask.redirect(flask.url_for("choose"))
 
 @app.route('/selected', methods=['POST'])
@@ -234,6 +264,32 @@ def fetchcal():
     app.logger.debug(cals)
     find_busy_free(cals)
     return render_template('free_times.html')
+
+@app.route('/manage')
+def manage_schedules():
+    app.logger.debug("Getting schedules now")
+    flask.session['schedules'] = get_schedules()
+    for schedule in flask.session['schedules']:
+        app.logger.debug("Schedule: " + str(schedule))
+    return flask.render_template("manage.html")
+
+@app.route('/_delete', methods=['post'])
+def delete_entry():
+    """
+    Deletes entry by ID
+    """
+    print("Getting entry id...")
+    entryID = request.form.get('entryID')
+    print("The entry id is " + entryID)
+    print("Deleting entry...")
+    
+    entry = collection.find_one({"_id": ObjectId(entryID)})
+    collection.remove(entry)
+    print("Deleted! Redirecting back to page.")
+
+    flask.session['schedules'] = get_schedules()
+    
+    return flask.render_template("manage.html")
 
 ####
 #
@@ -414,6 +470,7 @@ def find_busy_free(cal_list):
         else:
             break
 
+    app.logger.debug(ret_busy)
     ret_free = free_time(ret_busy)
     app.logger.debug(ret_free)
 
@@ -459,8 +516,10 @@ def free_time(busy_list):
     
     #Tests to see if there is a free period before the first event, if so appends
     first_ev = busy_list[0]
-    if arrow.get(first_ev['start']) > start:
-        free_times.append({'start': start, 'end': first_ev['start']})
+    first_start = arrow.get(first_ev['start'])
+    first_day = first_start.day
+    if first_start > start.replace(day=first_day):
+            free_times.append({'start': start.replace(day=first_day), 'end': first_ev['start']})
     
     print("Starting for loop")
     for i in range(len(busy_list)-1):
@@ -475,9 +534,12 @@ def free_time(busy_list):
         if ev_end < next_start:
             if ev_end.day == next_start.day:
                 free_times.append({'start': ev['end'], 'end':next['start']})
+            
             #Fixes the runover to fit in the legal time frame
             else:
                 free_times.append({'start': ev_end, 'end': end.replace(day=end_day)})
+                
+                #Checks if the
                 if next_start > start.replace(day=st_day):
                     free_times.append({'start': start.replace(day=st_day), 'end': next_start})
     
@@ -487,7 +549,8 @@ def free_time(busy_list):
         free_times.append({'start': last_ev['end'], 'end': end})
 
     app.logger.debug(free_times)
-    flask.session['free_times'] = time_convert(free_times)
+    flask.session['display_times'] = time_convert(free_times)
+    insert_schedule(flask.session['author'], flask.session['display_times'])
     return free_times
 
 def consolidate_events(ev_list):
@@ -530,14 +593,82 @@ def time_convert(ev_list):
         start = arrow.get(start).to('local')
         end = arrow.get(end).to('local')
         
-        start = start.format("MM/DD/YYYY HH:mm A")
-        end = end.format("HH:mm A")
+        form_start = start.format("MM/DD/YYYY HH:mm A")
         
-        converted.append({'start': start, 'end': end})
+        form_end = end.format("MM/DD/YYYY HH:mm A")
+        disp_end = end.format("HH:mm A")
+        
+        converted.append({'start': form_start, 'end': form_end, 'disp_end': disp_end})
     
     app.logger.debug(converted)
-
     return converted
+
+def error_handler(title, author, begin_time, end_time):
+    """
+    A function to handle the input errors from the index page.
+    """
+    error_flagged = False
+
+    if not title:
+        flask.flash("NO TITLE DETECTED: Please enter a title to continue.")
+        error_flagged = True
+    
+    if not author:
+        flask.flash("NO PROPOSER DETECTED: Please enter your name to continue.")
+        error_flagged = True
+
+    if not begin_time:
+        flask.flash("NO BEGIN TIME IN TIME RANGE DETECTED: Please enter a beginning time to continue.")
+        error_flagged = True
+
+    if not end_time:
+        flask.flash("NO END TIME IN TIME RANGE DETECTED: Please enter a ending time to continue.")
+        error_flagged = True
+
+    if begin_time:
+        try:
+            interpret_time(begin_time)
+        except:
+            flask.flash("INVALID BEGIN TIME DETECTED: Please enter a valid time to continue.")
+            error_flagged = True
+
+    if begin_time:
+        try:
+            interpret_time(begin_time)
+        except:
+            flask.flash("INVALID END TIME DETECTED: Please enter a valid time to continue.")
+            error_flagged = True
+
+    elif begin_time and end_time:
+        if interpret_time(end_time) <= interpret_time(begin_time):
+            flask.flash("INVALID TIME RANGE DETECTED: Please enter a valid range to continue.")
+            error_flagged = True
+
+    if error_flagged:
+        return flask.redirect("/index")
+
+    return
+
+def insert_schedule(author, ev_list):
+    """
+        Inserts the free schedule of a user into the database to be used by others.
+        """
+    record = {
+        "type": "schedule",
+            "author": author,
+                "ev_list": ev_list
+            }
+    collection.insert(record)
+    app.logger.debug("Schedule has been inserted into the database")
+
+def get_schedules():
+    records = []
+
+    for record in collection.find({"type": "schedule"}):
+        record['_id'] = str(record['_id'])
+        records.append(record)
+
+    return records
 
 #################
 #
