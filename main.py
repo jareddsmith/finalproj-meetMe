@@ -318,16 +318,26 @@ def fetchsched():
     for sched in flask.session['schedules']:
         if sched['_id'] in selected:
             scheds.extend(sched['ev_list'])
+    app.logger.debug(flask.session['schedules'])
     app.logger.debug(scheds)
+    
+    converted = []
+    for ev in scheds:
+        converted.append({'start': str(arrow.get(ev['start'], 'MM/DD/YYYY HH:mm A')), 'end': str(arrow.get(ev['end'], 'MM/DD/YYYY HH:mm A'))})
 
-    flask.session['meeting_times'] = sort_meetings(scheds)
-
+    converted = sort_meetings(converted)
+    flask.session['meeting_times'] = formatter(converted)
     app.logger.debug(flask.session['meeting_times'])
     return render_template('meeting_times.html')
 
 @app.route('/meeting', methods=['POST'])
 def display_meeting():
     app.logger.debug("Displaying meeting details")
+    flask.session['meeting'] = str(request.form.get("meeting"))
+    if flask.session['meeting'] == "None":
+        flask.flash("ERROR: You did not select a time frame! You must select one to create a meeting.")
+        return flask.redirect('/select_schedules')
+    
     return render_template('meeting.html')
 
 
@@ -491,7 +501,9 @@ def find_busy_free(cal_list):
     for i in range(len(busy_times)):
         ev_list.extend(busy_times[i])
 
+    app.logger.debug(ev_list)
     ev_list = sort_times(ev_list)
+    app.logger.debug(ev_list)
     ev_list = consolidate_events(ev_list)
     app.logger.debug(ev_list)
 
@@ -535,23 +547,56 @@ def sort_times(ev_list):
     return sorted
 
 def sort_meetings(ev_list):
-    """
-    Sorts like the function directly above but this one is for later in the program when the times have display times.
-    """
-    start_times = []
+    tuples = []
     for ev in ev_list:
-        start_times.append(ev['start'])
-    start_times.sort()
+        tuples.append((ev['start'], ev['end']))
+    app.logger.debug(tuples)
 
-    sorted = []
-    for st_time in start_times:
-        for ev in ev_list:
-            ev_start = ev['start']
-            ev_end = ev['end']
-            if st_time == ev_start:
-                sorted.append({'start': ev_start, 'end':ev_end, 'disp_end': ev['disp_end']})
+    tuples = sorted(tuples, key=lambda x: x[0])
+    app.logger.debug(tuples)
 
-    return sorted
+    for i in range(len(tuples)-1):
+        tup = tuples[i]
+        n_tup = tuples[i+1]
+
+        start, end = tup
+        n_st, n_end = n_tup
+
+        if start == n_st and n_end < end:
+            tuples[i] = n_tup
+            tuples[i+1] = tup
+
+    app.logger.debug(tuples)
+
+    events = []
+    for tup in tuples:
+        start, end = tup
+        events.append({'start': start, 'end': end})
+
+    return events
+
+def consol_openings(ev_list):
+    consolidated = []
+    for i in range(len(ev_list)-1):
+        ev = ev_list[i]
+        next = ev_list[i+1]
+        
+        #If the next busy event starts before the current event ends and ends before the current event does.
+        if (next['start'] <= ev['end'] and ev['end'] < next['end']):
+            consolidated.append({'start': next['start'], 'end': ev['end']})
+            ev_list[i+1] = ev
+        
+        #If the next busy event starts before the event ends
+        elif next['start'] < ev['end']:
+            consolidated.append({'start': ev['start'], 'end': next['start']})
+        
+        else:
+            consolidated.append({'start': ev['start'], 'end': ev['end']})
+
+    #Adds the final event
+    consolidated.append(ev_list[len(ev_list)-1])
+    
+    return consolidated
 
 def free_time(busy_list):
     """
@@ -729,6 +774,14 @@ def get_schedules():
         records.append(record)
 
     return records
+
+def formatter(ev_list):
+    formatted = []
+    for ev in ev_list:
+        formatted.append({'start': arrow.get(ev['start']).format('MM/DD/YYYY HH:mm A'), 'end': arrow.get(ev['end']).format('HH:mm A')})
+    app.logger.debug(formatted)
+
+    return formatted
 
 #################
 #

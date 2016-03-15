@@ -27,7 +27,7 @@ href="/static/css/busy.css"
         <hr>
         <p> <h3>{{ session.title }}</h3>
         <h4>Proposed by {{ session.author }}</h4>
-        <h5>DATE GOES HERE</h5>
+        <h5>{{ session.meeting }}</h5>
         {% if session.length_hours != "0"%}
         Length: <b>{{ session.length_hours }}</b> hours
         {% endif %}

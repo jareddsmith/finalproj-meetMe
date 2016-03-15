@@ -30,7 +30,7 @@ href="/static/css/busy.css"
                 {% for entry in session.meeting_times %}
                 <div class="row">
                     <div class="col-md-4">
-                        <input type="radio" name="meeting_time" value="{{ entry.start }},{{ entry.end }}" > {{ entry.start }} to {{ entry.disp_end }}
+                        <input type="radio" name="meeting" value="{{ entry.start }} to {{  entry.end }}" > {{ entry.start }} to {{ entry.end }}
                     </div>
                 </div>
                 {% endfor %}
@@ -38,10 +38,10 @@ href="/static/css/busy.css"
                     <p> No schedules were selected</p>
                     <input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Back"/>
                 {% else %}
-                    <br>
-                    <div class="col-md-4">
-                        <input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Back"/>&nbsp;<input type="submit" value="Confirm Meeting Time"/>
-                    </div>
+            <br>
+
+            <input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Back"/>&nbsp;<input type="submit" value="Confirm Meeting Time"/>
+
                 {% endif %}
             {% endif %}
 		</form>

@@ -25,13 +25,11 @@ href="/static/css/busy.css"
         {% endwith %}
         <hr>
             {% if session.display_times is defined  %}
+                <p>
                 {% for fr_time in session.display_times %}
-                <div class="row">
-                    <div class="col-md-4">
-                        {{ fr_time['start'] }} to {{ fr_time['disp_end'] }}
-                    </div>
-                </div>
+                    {{ fr_time['start'] }} to {{ fr_time['disp_end'] }}<br>
                 {% endfor %}
+                </p>
             {% endif %}
             <div class="row"></div>
         <br>
