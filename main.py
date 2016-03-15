@@ -252,7 +252,7 @@ def setrange():
 @app.route('/selected', methods=['POST'])
 def fetchcal():
     """
-    A function that create a list of selected calendars.
+    A function that creates a list of selected calendars.
     """
     app.logger.debug("Fetching the calendar(s) selected")
     cals = []
@@ -262,8 +262,15 @@ def fetchcal():
         if cal['id'] in selected:
             cals.append(cal)
     app.logger.debug(cals)
-    find_busy_free(cals)
-    return render_template('free_times.html')
+
+    try:
+        find_busy_free(cals)
+        return render_template('free_times.html')
+
+    except:
+        flask.flash("No calenders selected.")
+        return flask.redirect('/choose')
+
 
 @app.route('/manage')
 def manage_schedules():
@@ -271,9 +278,9 @@ def manage_schedules():
     flask.session['schedules'] = get_schedules()
     for schedule in flask.session['schedules']:
         app.logger.debug("Schedule: " + str(schedule))
-    return flask.render_template("manage.html")
+    return render_template('manage.html')
 
-@app.route('/_delete', methods=['post'])
+@app.route('/_delete', methods=['POST', 'GET'])
 def delete_entry():
     """
     Deletes entry by ID
@@ -286,10 +293,44 @@ def delete_entry():
     entry = collection.find_one({"_id": ObjectId(entryID)})
     collection.remove(entry)
     print("Deleted! Redirecting back to page.")
+    app.logger.debug("Entry deleted.")
 
     flask.session['schedules'] = get_schedules()
     
-    return flask.render_template("manage.html")
+    return render_template('manage.html')
+
+@app.route('/select_schedules')
+def select_schedules():
+    app.logger.debug("Entering schedule selection.")
+    return render_template('schedules.html')
+
+@app.route('/timeframe', methods=['POST'])
+def fetchsched():
+    """
+    A function that creates a list of selected schedules, finds the common times,
+    then redirects to a page that selects the timeframe for the meeting.
+    """
+
+    app.logger.debug("Fetching the schedules(s) selected")
+    scheds = []
+    selected = request.form.getlist('schedule')
+    app.logger.debug(selected)
+    for sched in flask.session['schedules']:
+        if sched['_id'] in selected:
+            scheds.extend(sched['ev_list'])
+    app.logger.debug(scheds)
+
+    flask.session['meeting_times'] = sort_meetings(scheds)
+
+    app.logger.debug(flask.session['meeting_times'])
+    return render_template('meeting_times.html')
+
+@app.route('/meeting', methods=['POST'])
+def display_meeting():
+    app.logger.debug("Displaying meeting details")
+    return render_template('meeting.html')
+
+
 
 ####
 #
@@ -490,6 +531,25 @@ def sort_times(ev_list):
             ev_end = ev['end']
             if st_time == ev_start:
                 sorted.append({'start': ev_start, 'end':ev_end})
+
+    return sorted
+
+def sort_meetings(ev_list):
+    """
+    Sorts like the function directly above but this one is for later in the program when the times have display times.
+    """
+    start_times = []
+    for ev in ev_list:
+        start_times.append(ev['start'])
+    start_times.sort()
+
+    sorted = []
+    for st_time in start_times:
+        for ev in ev_list:
+            ev_start = ev['start']
+            ev_end = ev['end']
+            if st_time == ev_start:
+                sorted.append({'start': ev_start, 'end':ev_end, 'disp_end': ev['disp_end']})
 
     return sorted
 

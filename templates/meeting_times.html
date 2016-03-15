@@ -1,0 +1,51 @@
+<html lang="en"><head>
+<title> Meet Me: Meeting Times</title>
+<link rel="stylesheet" type="text/css"
+href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+href="/static/css/busy.css"
+/>
+
+</head>
+
+<body>
+	<div class="container">
+        <h1>Mutual openings found</h1>
+        <h5>Select the best possible time for the meeting:</h5>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <hr>
+        <form action="/meeting" method="post">
+            {% if session.meeting_times is defined  %}
+                {% for entry in session.meeting_times %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="radio" name="meeting_time" value="{{ entry.start }},{{ entry.end }}" > {{ entry.start }} to {{ entry.disp_end }}
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not session.meeting_times %}
+                    <p> No schedules were selected</p>
+                    <input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Back"/>
+                {% else %}
+                    <br>
+                    <div class="col-md-4">
+                        <input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Back"/>&nbsp;<input type="submit" value="Confirm Meeting Time"/>
+                    </div>
+                {% endif %}
+            {% endif %}
+		</form>
+	</div><!--container-->
+</body>
+
+</html>

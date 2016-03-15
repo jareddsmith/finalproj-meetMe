@@ -41,10 +41,23 @@ href="/static/css/busy.css"
                     </div> <!-- schedule -->
                 </form>
             {% endfor %}
+            {% if session.schedules %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <input style="display: table-cell" type="button" onclick="document.location='/index'" value="Restart"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Next"/>
+                    </div>
+                </div>
+            {% endif %}
         {% endif %}
-        {% if not session.schedules %}
-            <p>No schedules found. You must have deleted too many, including your own!</p>
-            <input style="display: table-cell" type="button" onclick="document.location='/index'" value="Restart"/>
+        {% if not session.schedules %}<!-- Renders the error section, if no schedules are found. -->
+            <p>No schedules found. You must have deleted too many, including your own!
+            <br> If you need another person's schedule, they must propose another meeting
+            <br>for it to be available again.
+            <br>
+            <br>Tip: Be careful while managing schedules to avoid this message.
+            </p>
+            <br>
+            <input style="display: table-cell" type="button" onclick="document.location='/index'" value="Restart"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/choose'" value="Re-submit"/>
         {% endif %}
         
 	</div><!--container-->

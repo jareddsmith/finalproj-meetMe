@@ -1,0 +1,53 @@
+<html lang="en"><head>
+<title> Meet Me: Meeting</title>
+<link rel="stylesheet" type="text/css"
+href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+href="/static/css/busy.css"
+/>
+
+</head>
+
+<body>
+	<div class="container">
+        <h1>Meeting Confimed!</h1>
+        <h5>Copy and paste the meeting details with a link to this application into an email to invite others.</h5>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <hr>
+        <p> <h3>{{ session.title }}</h3>
+        <h4>Proposed by {{ session.author }}</h4>
+        <h5>DATE GOES HERE</h5>
+        {% if session.length_hours != "0"%}
+        Length: <b>{{ session.length_hours }}</b> hours
+        {% endif %}
+        {% if session.length_minutes != "0"%}
+            <b>{{ session.length_minutes }}</b> minutes
+        {% endif %}
+        {% if session.location %}
+        <br>Location: {{ session.location }}
+        {% endif %}
+        {% if session.comments %}
+        <br>Comments/Notes: {{ session.comments }}
+        {% endif %}
+        </p>
+        <br>
+        <div class="row">
+            <div class="col-md-4">
+                <input style="display: table-cell" type="button" onclick="document.location='/select_schedules'" value="Back"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/index'" value="Restart"/
+            </div>
+        </div>
+	</div><!--container-->
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+<html lang="en"><head>
+<title> Meet Me: Schedules</title>
+<link rel="stylesheet" type="text/css"
+href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+href="/static/css/busy.css"
+/>
+
+</head>
+
+<body>
+	<div class="container">
+        <h1>Schedules found</h1>
+        <h5>Select schedules to find the common free times:</h5>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <hr>
+        <script>
+            function toggle(source) {
+                checkboxes = document.getElementsByName('schedule');
+                for(var i=0, n=checkboxes.length;i<n;i++) {
+                    checkboxes[i].checked = source.checked;
+                }
+            }
+        </script>
+        <div class="row">
+            <div class="col-md-4">
+                <input type="checkbox" onClick="toggle(this)" /> Select all
+            </div>
+        </div>
+        <br>
+        <form action="/timeframe" method="post">
+            {% if session.schedules is defined  %}
+                {% for entry in session.schedules %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="checkbox" name="schedule" value="{{ entry._id }}"> {{ entry.author }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        <br>
+        <div class="row">
+            <div class="col-md-4">
+                <input style="display: table-cell" type="button" onclick="document.location='/manage'" value="Back"/>&nbsp;<input type="submit"/>
+            </div>
+        </div>
+		</form>
+	</div><!--container-->
+</body>
+
+</html>

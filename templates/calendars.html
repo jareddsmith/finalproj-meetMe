@@ -12,7 +12,7 @@ href="/static/css/busy.css"
 
 <body>
 	<div class="container">
-        <h1>Choose calendars to use:</h1>
+        <h1>Choose calendars to use for schedule:</h1>
         {% with messages = get_flashed_messages() %}
             {% if messages %}
                 <ul class=flashes>
@@ -39,7 +39,7 @@ href="/static/css/busy.css"
         <br>
         <div class="row">
             <div class="col-md-4">
-                <input type="submit" value="Choose"/>&nbsp;<input style="display: table-cell" type="button" onclick="document.location='/index'" value="Back"/>
+                <input style="display: table-cell" type="button" onclick="document.location='/index'" value="Back"/>&nbsp;<input type="submit" value="Choose"/>
             </div>
         </div>
 		</form>
